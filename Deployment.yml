@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kwetter-post-service
+  namespace: development
+  labels:
+    track: kwetter-post-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kwetter-post-service
+  template:
+    metadata:
+      labels:
+        app: kwetter-post-service
+        environment: development
+    spec:
+      containers:
+      - name: kwetter-post-service
+        image: mixampo.azurecr.io/repository-kwetter-post-service:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+        ports:
+          - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kwetter-post-service
+  namespace: development
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v1
+      kind: Mapping
+      name: kwetter-post-service_mapping
+      prefix: /post/
+      service: kwetter-post-service
+      timeout_ms: 100000
+      idle_timeout_ms: 500000
+      connect_timeout_ms: 100000
+  labels:
+    name: kwetter-post-service
+spec:
+  selector:
+    app: kwetter-post-service
+    environment: development
+  ports:
+  - port: 80
+    name: http
+    protocol: TCP
+    targetPort: 80
+  type: ClusterIP
